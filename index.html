@@ -1,7 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Informations pour la PWA (ajoutées) -->
+    <meta name="theme-color" content="#4f46e5"/>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+
+    <title>Calculette du Néphrologue</title>
+    
+    <!-- Tailwind CSS pour le design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Polices Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #4f46e5; /* Indigo 600 */
+            --primary-hover: #4338ca; /* Indigo 700 */
+            --secondary-bg: #eef2ff; /* Lighter Indigo */
+            --card-bg: #ffffff;
+            --text-primary: #1f2937; /* Gray 800 */
+            --text-secondary: #4b5563; /* Gray 600 */
+            --border-color: #e5e7eb; /* Gray 200 */
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .calculator-card {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }
+        .calculator-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .card-icon {
+            flex-shrink: 0;
+            background-color: var(--secondary-bg);
+            color: var(--primary-color);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        .card-title {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        .form-button {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+        .form-button:hover {
+            background-color: var(--primary-hover);
+        }
+        .result-box {
+            background-color: var(--secondary-bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            min-height: 110px;
+            margin-top: auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .result-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .result-unit { font-size: 0.875rem; color: var(--text-secondary); }
+        .result-interpretation { font-size: 0.875rem; margin-top: 0.5rem; color: #374151; }
+        .prompt-message { color: var(--text-secondary); font-size: 0.875rem; }
+         .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 1rem; }
+        .tab-button { padding: 0.5rem 1rem; cursor: pointer; font-weight: 500; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px;}
+        .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .cat-box {
+             margin-top: 1rem;
+             padding: 0.75rem;
+             border-left-width: 4px;
+             background-color: var(--secondary-bg);
+             font-size: 0.875rem;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 90%;
+            width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        /* Style pour le bouton d'installation (ajouté) */
+        #installBtn { 
+            display: none; /* Caché par défaut */
+            margin-left: 1rem;
+            background-color: #22c55e; /* green-500 */
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #installBtn:hover {
+            background-color: #16a34a; /* green-600 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+        <header class="text-center mb-8 md:mb-12 flex items-center justify-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Calculette du Néphrologue</h1>
+                <p class="text-lg text-gray-600 mt-2">Outils cliniques avec résultats et recommandations.</p>
+            </div>
+            <!-- Bouton d'installation (ajouté) -->
+            <button id="installBtn">Installer</button>
+        </header>
+
+        <main class="space-y-8">
+             <!-- 1. Recherche -->
+             <div id="card-recherche" class="calculator-card">
+                <div class="card-header"><div class="card-icon"><i class="fa-solid fa-search"></i></div><h2 class="card-title">Rechercher un Calculateur</h2></div>
+                <input type="search" id="search-input" placeholder="Tapez un mot-clé (ex: DFGe, IRA, FENa)..." class="form-input p-3">
+                <div id="search-results" class="mt-4 space-y-2"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                <!-- 2. DFGe -->
+                <div id="card-dfge" class="calculator-card">
+                     <div class="card-header"><div class="card-icon"><i class="fa-solid fa-calculator"></i></div><h2 class="card-title">DFG estimé (CKD-EPI 2021)</h2></div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2"><label for="creatinine-serique" class="form-label">Créatinine sérique</label><input type="number" id="creatinine-serique" class="form-input" placeholder="Ex: 80" step="any"></div>
+                            <div><label for="creatinine-serique-unit" class="form-label">Unité</label><select id="creatinine-serique-unit" class="form-input"><option value="umol/L">µmol/L</option><option value="mg/dL">mg/dL</option><option value="mg/L">mg/L</option></select></div>
+                        </div>
+                        <div><label for="age" class="form-label">Âge</label><input type="number" id="age" class="form-input" placeholder="Ex: 50"></div>
+                        <div><label for="sexe" class="form-label">Sexe</label><select id="sexe" class="form-input"><option value="femme">Femme</option><option value="homme">Homme</option></select></div>
+                        <button id="calculer-dfge" class="form-button">Calculer</button>
+                    </div>
+                    <div id="resultat-dfge" class="result-box mt-4"></div>
+                </div>
+
+                <!-- 3. Stades IRA -->
+                <div id="card-ira" class="calculator-card">
+                    <div class="card-header"><div class="card-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><h2 class="card-title">Stadification de l'IRA (KDIGO)</h2></div>
+                    <div class="tabs">
+                        <button class="tab-button active" data-tab="creat">Critère Créatinine</button>
+                        <button class="tab-button" data-tab="diurese">Critère Diurèse</button>
+                    </div>
+                    <div id="tab-creat" class="tab-content active space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label for="ira-creat-base" class="form-label">Créat. de base</label><input type="number" id="ira-creat-base" class="form-input" placeholder="Ex: 80"></div>
+                            <div><label for="ira-creat-actuelle" class="form-label">Créat. actuelle</label><input type="number" id="ira-creat-actuelle" class="form-input" placeholder="Ex: 150"></div>
+                        </div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div><label for="ira-creat-unit" class="form-label">Unité Créatinine</label><select id="ira-creat-unit" class="form-input"><option value="umol/L">µmol/L</option><option value="mg/dL">mg/dL</option><option value="mg/L">mg/L</option></select></div>
+                            <div><label for="ira-creat-duree" class="form-label">Fenêtre temporelle</label><select id="ira-creat-duree" class="form-input"><option value="48h">en 48 heures</option><option value="7j">sur 7 jours</option></select></div>
+                        </div>
+                    </div>
+                    <div id="tab-diurese" class="tab-content space-y-4">
+                        <div><label for="ira-diurese-poids" class="form-label">Poids du patient (kg)</label><input type="number" id="ira-diurese-poids" class="form-input" placeholder="Ex: 70"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label for="ira-diurese-volume" class="form-label">Volume urinaire (mL)</label><input type="number" id="ira-diurese-volume" class="form-input" placeholder="Ex: 200"></div>
+                            <div><label for="ira-diurese-duree" class="form-label">Durée (heures)</label><input type="number" id="ira-diurese-duree" class="form-input" placeholder="Ex: 12"></div>
+                        </div>
+                    </div>
+                     <button id="calculer-ira" class="form-button">Calculer</button>
+                    <div id="resultat-ira" class="result-box mt-4"></div>
+                </div>
+            </div>
+
+            <!-- 4. GEM -->
+            <div id="card-gem" class="calculator-card md:col-span-2">
+                 <div class="card-header"><div class="card-icon"><i class="fa-solid fa-shield-virus"></i></div><h2 class="card-title">Risque de Progression - GEM (KDIGO 2021)</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div><label for="gem-dfg" class="form-label">DFGe (mL/min/1.73m²)</label><input type="number" id="gem-dfg" class="form-input" placeholder="Ex: 75"></div>
+                    <div><label for="gem-proteinurie" class="form-label">Protéinurie (g/jour)</label><input type="number" id="gem-proteinurie" class="form-input" placeholder="Ex: 4.5"></div>
+                    <div><label for="gem-albuminemie" class="form-label">Albuminémie (g/L)</label><input type="number" id="gem-albuminemie" class="form-input" placeholder="Ex: 28"></div>
+                    <div><label for="gem-pla2r" class="form-label">Anti-PLA2R (RU/mL)</label><input type="number" id="gem-pla2r" class="form-input" placeholder="Ex: 40"></div>
+                </div>
+                 <div class="mt-4 flex items-center"><input id="gem-complications" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="gem-complications" class="ml-2 block text-sm text-gray-900">Complications sévères ou dégradation rapide du DFGe</label></div>
+                 <button id="calculer-gem" class="form-button">Calculer</button>
+                <div id="resultat-gem" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"></div>
+            </div>
+
+             <!-- 5. Troubles Acido-Basiques & Osmolalité -->
+            <div id="card-acido" class="calculator-card md:col-span-2">
+                <div class="card-header"><div class="card-icon"><i class="fa-solid fa-flask-vial"></i></div><h2 class="card-title">Troubles Acido-Basiques & Osmolalité</h2></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+                    <!-- Section Trou Anionique & Osmolalité -->
+                    <div class="space-y-4 border-r-0 lg:border-r lg:pr-8 border-gray-200">
+                        <h3 class="font-semibold text-gray-700">Trou Anionique & Osmolarité</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div><label for="na-acido" class="form-label">Na⁺ (mmol/L)</label><input type="number" id="na-acido" class="form-input" placeholder="140"></div>
+                            <div><label for="cl-acido" class="form-label">Cl⁻ (mmol/L)</label><input type="number" id="cl-acido" class="form-input" placeholder="100"></div>
+                            <div><label for="hco3-acido" class="form-label">HCO₃⁻ (mmol/L)</label><input type="number" id="hco3-acido" class="form-input" placeholder="24"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label for="uree-acido" class="form-label">Urée</label><input type="number" id="uree-acido" class="form-input" placeholder="5"></div>
+                            <div><label for="uree-acido-unit" class="form-label">Unité</label><select id="uree-acido-unit" class="form-input"><option value="mmol/L">mmol/L</option><option value="g/L">g/L</option></select></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                             <div><label for="glycemie-acido" class="form-label">Glycémie</label><input type="number" id="glycemie-acido" class="form-input" placeholder="1"></div>
+                            <div><label for="glycemie-acido-unit" class="form-label">Unité</label><select id="glycemie-acido-unit" class="form-input"><option value="g/L">g/L</option><option value="mmol/L">mmol/L</option></select></div>
+                        </div>
+                         <div><label for="osm-mesuree" class="form-label">Osmolalité Mesurée (optionnel)</label><input type="number" id="osm-mesuree" class="form-input" placeholder="Ex: 295"></div>
+                        <button id="calculer-acido" class="form-button">Calculer</button>
+                        <div id="resultat-acido" class="result-box"></div>
+                    </div>
+                    <!-- Section Formule de Winters -->
+                    <div class="space-y-4">
+                        <h3 class="font-semibold text-gray-700">Compensation Respiratoire (Winters)</h3>
+                         <div><label for="winters-hco3" class="form-label">HCO₃⁻ mesuré (mmol/L)</label><input type="number" id="winters-hco3" class="form-input" placeholder="15"></div>
+                         <button id="calculer-winters" class="form-button">Calculer</button>
+                        <div id="resultat-winters" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- 6. Autres Calculs -->
+            <div id="card-autres" class="calculator-card md:col-span-2">
+                <div class="card-header"><div class="card-icon"><i class="fa-solid fa-vials"></i></div><h2 class="card-title">Autres Calculs d'Orientation</h2></div>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
+                    <!-- Rapport Urée/Créat -->
+                    <div class="space-y-4 border-r-0 md:border-r md:pr-8 border-gray-200">
+                        <h3 class="font-semibold text-gray-700">Rapport Urée / Créatinine</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2"><label for="uree-sanguine" class="form-label">Urée sanguine</label><input type="number" id="uree-sanguine" class="form-input" placeholder="Ex: 0.45" step="any"></div>
+                            <div><label for="uree-unit" class="form-label">Unité</label><select id="uree-unit" class="form-input"><option value="g/L">g/L</option><option value="mmol/L">mmol/L</option></select></div>
+                        </div>
+                         <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2"><label for="creatinine-rapport" class="form-label">Créatininémie</label><input type="number" id="creatinine-rapport" class="form-input" placeholder="Ex: 9" step="any"></div>
+                            <div><label for="creatinine-rapport-unit" class="form-label">Unité</label><select id="creatinine-rapport-unit" class="form-input"><option value="mg/L">mg/L</option><option value="umol/L">µmol/L</option></select></div>
+                        </div>
+                        <button id="calculer-rapport" class="form-button">Calculer</button>
+                        <div id="resultat-rapport" class="result-box"></div>
+                    </div>
+                    <!-- FENa -->
+                    <div class="space-y-4 border-r-0 md:border-r md:pr-8 border-gray-200">
+                        <h3 class="font-semibold text-gray-700">Fraction d'Excrétion Na⁺ (FENa)</h3>
+                        <div><label for="sodium-serique" class="form-label">Na⁺ sérique (mmol/L)</label><input type="number" id="sodium-serique" class="form-input" placeholder="Ex: 140"></div>
+                        <div><label for="sodium-urinaire" class="form-label">Na⁺ urinaire (mmol/L)</label><input type="number" id="sodium-urinaire" class="form-input" placeholder="Ex: 20"></div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2"><label for="creatinine-serique-fena" class="form-label">Créat. sérique</label><input type="number" id="creatinine-serique-fena" class="form-input" placeholder="Valeur" step="any"></div>
+                            <div><label for="creatinine-fena-unit" class="form-label">Unité</label><select id="creatinine-fena-unit" class="form-input"><option value="umol/L">µmol/L</option><option value="mg/dL">mg/dL</option><option value="mg/L">mg/L</option></select></div>
+                        </div>
+                        <div><label for="creatinine-urinaire" class="form-label">Créat. urinaire (même unité)</label><input type="number" id="creatinine-urinaire" class="form-input" placeholder="Valeur"></div>
+                        <button id="calculer-fena" class="form-button">Calculer</button>
+                        <div id="resultat-fena" class="result-box"></div>
+                    </div>
+                    <!-- Calcium Corrigé -->
+                    <div class="space-y-4">
+                        <h3 class="font-semibold text-gray-700">Calcium Corrigé (Standard & Révisé)</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2"><label for="calcium" class="form-label">Calcium total</label><input type="number" id="calcium" class="form-input" placeholder="95" step="0.1"></div>
+                            <div><label for="calcium-unit" class="form-label">Unité</label><select id="calcium-unit" class="form-input"><option value="mg/L">mg/L</option><option value="mg/dL">mg/dL</option><option value="mmol/L">mmol/L</option></select></div>
+                        </div>
+                         <div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="col-span-2"><label for="albumine" class="form-label">Albumine</label><input type="number" id="albumine" class="form-input" placeholder="35" step="0.1"></div>
+                                <div><label for="albumine-unit" class="form-label">Unité</label><select id="albumine-unit" class="form-input"><option value="g/L">g/L</option><option value="g/dL">g/dL</option></select></div>
+                            </div>
+                        </div>
+                        <button id="calculer-calcium" class="form-button">Calculer</button>
+                        <div id="resultat-calcium" class="result-box"></div>
+                        <button onclick="openModal('calcium-modal')" class="text-sm text-blue-600 hover:underline mt-2">Détails des formules</button>
+                    </div>
+                 </div>
+            </div>
+        </main>
+        
+        <footer class="text-center mt-12 text-sm text-gray-500">
+            <p>&copy; 2024, Ibrahima Sow IDH Néphrologie - Application de calculateurs pour la néphrologie. Outil à usage informatif uniquement.</p>
+        </footer>
+    </div>
+    
+    <!-- Modal pour les détails de la formule de calcium -->
+    <div id="calcium-modal" class="modal-overlay" onclick="closeModal('calcium-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-bold mb-4">Formules du Calcium Corrigé</h3>
+            <div class="text-sm text-slate-700 space-y-4">
+                 <div>
+                    <h4 class="font-semibold mb-1">Formule Standard (Payne)</h4>
+                    <p>La formule la plus couramment utilisée.</p>
+                    <code class="text-xs bg-slate-100 p-1 rounded mt-1 block">[Ca]c (mg/dL) = [Ca] mesuré (mg/dL) + 0.8 * (4 - Albumine g/dL)</code>
+                </div>
+                 <hr>
+                <div>
+                    <h4 class="font-semibold mb-1">Formule Révisée (Albert & Isbell)</h4>
+                    <p><strong>Étude :</strong> "Reconsideration of 'Albumin corrected total calcium' Determinations". Montre une meilleure sensibilité pour l'hypocalcémie.</p>
+                    <code class="text-xs bg-slate-100 p-1 rounded mt-1 block">[Ca]c (mg/dL) = [Ca] mesuré + [(4 - Albumine) * ([Ca] mesuré * 0.052)]</code>
+                </div>
+            </div>
+            <button onclick="closeModal('calcium-modal')" class="mt-6 w-full bg-slate-200 py-2 rounded-lg hover:bg-slate-300">Fermer</button>
+        </div>
+    </div>
+
+
+<script>
+// --- Logique PWA ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('Service Worker: Enregistré avec succès');
+            })
+            .catch(error => {
+                console.log('Service Worker: Échec de l\'enregistrement:', error);
+            });
+    });
+}
+
+let deferredPrompt;
+const installButton = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installButton) {
+        installButton.style.display = 'block';
+        installButton.addEventListener('click', () => {
+            installButton.style.display = 'none';
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                console.log(`Action de l'utilisateur: ${choiceResult.outcome}`);
+                deferredPrompt = null;
+            });
+        });
+    }
+});
+
+
+// --- Logique de l'application ---
 document.addEventListener('DOMContentLoaded', function() {
-    // =================================================================
-    // MODULE DE L'APPLICATION
-    // =================================================================
+    
     const NephroCalcApp = {
         // --- Constantes de conversion ---
         CONVERSIONS: {
@@ -9,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
             UREA_G_L_TO_MMOL_L: 16.65,
             ALBUMINE_G_L_TO_G_DL: 10,
             CALCIUM_MG_L_TO_MG_DL: 10,
-            CALCIUM_MMOL_L_TO_MG_DL: 4.0,
+            CALCIUM_MMOL_L_TO_MG_DL: 4.0, // 1 mmol/L de Ca = 4 mg/dL
             CREAT_MG_L_TO_UMOL_L: 1000 / 113.12,
             GLYCEMIE_G_L_TO_MMOL_L: 5.55
         },
@@ -19,18 +434,89 @@ document.addEventListener('DOMContentLoaded', function() {
             getEl: id => document.getElementById(id),
             showPrompt: (el, msg) => { if(el) el.innerHTML = `<p class="prompt-message p-2">${msg}</p>`; },
             showError: (el, msg) => { if(el) el.innerHTML = `<p class="text-red-500 font-medium p-2">${msg}</p>`; },
-            showResult: (el, val, unit, interp) => { if(el) el.innerHTML = `<p class="result-value">${val}</p><p class="result-unit">${unit}</p><p class="result-interpretation">${interp}</p>`; },
+            showResult: (el, val, unit, interp) => {
+                if (el) el.innerHTML = `<p class="result-value">${val}</p><p class="result-unit">${unit}</p><p class="result-interpretation">${interp}</p>`;
+            },
             getCreatInMgDl: (val, unit) => {
                 if (unit === 'umol/L') return val / NephroCalcApp.CONVERSIONS.CREAT_MG_DL_TO_UMOL_L;
                 if (unit === 'mg/L') return val / 10;
-                return val;
+                return val; // La valeur est déjà en mg/dL
             }
         },
         
         // --- Gestion du Modal ---
         modal: {
-            open: (modalId) => NephroCalcApp.utils.getEl(modalId).classList.add('active'),
-            close: (modalId) => NephroCalcApp.utils.getEl(modalId).classList.remove('active')
+            open: (modalId) => {
+                const modal = NephroCalcApp.utils.getEl(modalId);
+                if (modal) modal.classList.add('active');
+            },
+            close: (modalId) => {
+                const modal = NephroCalcApp.utils.getEl(modalId);
+                if (modal) modal.classList.remove('active');
+            }
+        },
+
+        // --- Moteur de Recherche ---
+        search: {
+            // Base de données des calculateurs pour la recherche
+            data: [
+                { id: 'card-dfge', title: 'DFG estimé (CKD-EPI 2021)', keywords: 'dfg dfge ckd-epi filtration clairance créatinine stade irc' },
+                { id: 'card-ira', title: "Stadification de l'IRA (KDIGO)", keywords: 'ira kdigo stade aiguë insuffisance rénale diurèse' },
+                { id: 'card-gem', title: 'Risque de Progression - GEM', keywords: 'gem membraneuse glomérulonéphrite risque pla2r' },
+                { id: 'card-autres', title: 'Rapport Urée / Créatinine', keywords: 'urée créatinine rapport fonctionnelle organique' },
+                { id: 'card-autres', title: "Fraction d'Excrétion Na⁺ (FENa)", keywords: 'fena sodium fraction excrétion nta pré-rénale' },
+                { id: 'card-autres', title: 'Calcium Corrigé (Standard & Révisé)', keywords: 'calcium corrigé albumine payne albert isbell' },
+                { id: 'card-acido', title: 'Troubles Acido-Basiques & Osmolalité', keywords: 'acido basique osmolarité trou anionique winters compensation' }
+            ],
+            // Initialisation de la fonction recherche
+            init() {
+                const searchInput = NephroCalcApp.utils.getEl('search-input');
+                const searchResultsContainer = NephroCalcApp.utils.getEl('search-results');
+
+                if (!searchInput || !searchResultsContainer) return;
+
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    searchResultsContainer.innerHTML = ''; // Vide les résultats précédents
+
+                    if (searchTerm.length < 2) return;
+                    
+                    const results = this.data.filter(calc => 
+                        calc.title.toLowerCase().includes(searchTerm) || 
+                        calc.keywords.includes(searchTerm)
+                    );
+
+                    if (results.length > 0) {
+                        results.forEach(result => {
+                            const resultEl = document.createElement('a');
+                            resultEl.href = `#${result.id}`;
+                            resultEl.className = "block p-4 bg-slate-50 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer";
+                            resultEl.innerHTML = `<p class="font-semibold text-indigo-700">${result.title}</p>`;
+                            
+                            resultEl.addEventListener('click', (event) => {
+                                event.preventDefault();
+                                const targetCard = NephroCalcApp.utils.getEl(result.id);
+                                if (targetCard) {
+                                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    // Effet visuel pour mettre en évidence la carte
+                                    targetCard.style.transition = 'all 0.2s ease-in-out';
+                                    targetCard.style.transform = 'scale(1.02)';
+                                    targetCard.style.boxShadow = '0 0 20px rgba(79, 70, 229, 0.4)';
+                                    setTimeout(() => {
+                                        targetCard.style.transform = '';
+                                        targetCard.style.boxShadow = '';
+                                    }, 1500);
+                                }
+                                searchInput.value = ''; // Vide le champ de recherche
+                                searchResultsContainer.innerHTML = ''; // Vide les résultats
+                            });
+                            searchResultsContainer.appendChild(resultEl);
+                        });
+                    } else {
+                        searchResultsContainer.innerHTML = '<p class="text-center text-slate-500 p-4">Aucun calculateur trouvé.</p>';
+                    }
+                });
+            }
         },
 
         // --- Logique des calculateurs ---
@@ -39,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const { getEl, showError, showResult, getCreatInMgDl } = NephroCalcApp.utils;
                 const resultatDiv = getEl('resultat-dfge');
                 const creatValue = parseFloat(getEl('creatinine-serique').value), age = parseInt(getEl('age').value);
-                if (isNaN(creatValue) || isNaN(age)) { showError(resultatDiv, 'Veuillez saisir toutes les données.'); return; }
+                if (isNaN(creatValue) || isNaN(age) || creatValue <= 0 || age <=0) { showError(resultatDiv, 'Valeurs > 0 requises.'); return; }
                 const creatUnit = getEl('creatinine-serique-unit').value, sexe = getEl('sexe').value;
                 const creatinineSerique = getCreatInMgDl(creatValue, creatUnit);
                 let k = sexe === 'femme' ? 0.7 : 0.9, alpha = sexe === 'femme' ? -0.241 : -0.302;
@@ -85,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (isNaN(uree) || isNaN(creat)) { showError(resultatDiv, 'Saisissez les données.'); return; }
                 const ureeUnit = getEl('uree-unit').value, creatUnit = getEl('creatinine-rapport-unit').value;
                 if (ureeUnit === 'g/L') uree *= UREA_G_L_TO_MMOL_L;
-                if (creatUnit === 'mg/L') creat *= CREAT_MG_L_TO_UMOL_L;
+                if (creatUnit === 'mg/L') creat *= CREAT_MG_L_TO_UMOL_L; // Convertit mg/L en µmol/L
                 const rapport = (uree * 1000) / creat;
                 showResult(resultatDiv, rapport.toFixed(1), '(Urée mmol/L) / (Créat µmol/L) * 1000', rapport > 100 ? "Orientation IRA fonctionnelle." : rapport < 50 ? "Orientation IRA organique." : "Zone grise (50-100).");
             },
@@ -97,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (isNaN(naU) || isNaN(creatSVal) || isNaN(naS) || isNaN(creatUVal)) { showError(resultatDiv, 'Saisissez les données.'); return; }
                 const creatUnit = getEl('creatinine-fena-unit').value;
                 const creatSMgDl = getCreatInMgDl(creatSVal, creatUnit), creatUMgDl = getCreatInMgDl(creatUVal, creatUnit);
-                if (creatUMgDl === 0) { showError(resultatDiv, 'Créat.U non nulle.'); return; }
+                if (creatUMgDl === 0) { showError(resultatDiv, 'Créat. urinaire doit être > 0.'); return; }
                 const fena = ((naU * creatSMgDl) / (naS * creatUMgDl)) * 100;
                 showResult(resultatDiv, fena.toFixed(2) + '%', '', fena < 1 ? "Suggère une cause pré-rénale." : fena > 2 ? "Suggère une nécrose tubulaire aiguë." : "Zone intermédiaire (1-2%).");
             },
@@ -134,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const calciumUnit = getEl('calcium-unit').value, albumineUnit = getEl('albumine-unit').value;
                 let calciumMgDl = calciumVal;
                 if (calciumUnit === 'mmol/L') calciumMgDl = calciumVal * CALCIUM_MMOL_L_TO_MG_DL;
-                if (calciumUnit === 'mg/L') calciumMgDl = calciumVal / CALCIUM_MG_L_TO_MG_DL;
+                else if (calciumUnit === 'mg/L') calciumMgDl = calciumVal / CALCIUM_MG_L_TO_MG_DL;
                 let albumineGDl = albumineVal;
                 if (albumineUnit === 'g/L') albumineGDl = albumineVal / ALBUMINE_G_L_TO_G_DL;
                 const correctedCalciumStandard = calciumMgDl + 0.8 * (4.0 - albumineGDl);
@@ -171,38 +657,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
 
+        // --- Initialisation de l'application ---
         init() {
-            const { getEl, showPrompt } = this.utils;
-            getEl('calculer-dfge').addEventListener('click', this.calculators.dfge);
-            getEl('calculer-ira').addEventListener('click', this.calculators.ira);
-            getEl('calculer-gem').addEventListener('click', this.calculators.gem);
-            getEl('calculer-rapport').addEventListener('click', this.calculators.rapport);
-            getEl('calculer-fena').addEventListener('click', this.calculators.fena);
-            getEl('calculer-calcium').addEventListener('click', this.calculators.calcium);
-            getEl('calculer-acido').addEventListener('click', this.calculators.acidoOsm);
-            getEl('calculer-winters').addEventListener('click', this.calculators.winters);
+            // Initialise la recherche
+            this.search.init();
 
+            // Attache les événements aux boutons de calcul
+            const buttons = [
+                { id: 'calculer-dfge', func: this.calculators.dfge },
+                { id: 'calculer-ira', func: this.calculators.ira },
+                { id: 'calculer-gem', func: this.calculators.gem },
+                { id: 'calculer-rapport', func: this.calculators.rapport },
+                { id: 'calculer-fena', func: this.calculators.fena },
+                { id: 'calculer-calcium', func: this.calculators.calcium },
+                { id: 'calculer-acido', func: this.calculators.acidoOsm },
+                { id: 'calculer-winters', func: this.calculators.winters }
+            ];
+            buttons.forEach(button => {
+                const btnEl = this.utils.getEl(button.id);
+                if (btnEl) btnEl.addEventListener('click', button.func);
+            });
+
+            // Gère la navigation par onglets pour l'IRA
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.addEventListener('click', () => {
                     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                    getEl(`tab-${button.dataset.tab}`).classList.add('active');
+                    this.utils.getEl(`tab-${button.dataset.tab}`).classList.add('active');
                 });
             });
             
-            showPrompt(getEl('resultat-dfge'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-ira'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-gem'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-rapport'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-fena'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-calcium'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-acido'), 'Cliquez sur Calculer.');
-            showPrompt(getEl('resultat-winters'), 'Cliquez sur Calculer.');
+            // Affiche les messages initiaux dans les boîtes de résultats
+            const resultBoxes = ['dfge', 'ira', 'gem', 'rapport', 'fena', 'calcium', 'acido', 'winters'];
+            resultBoxes.forEach(box => {
+                this.utils.showPrompt(this.utils.getEl(`resultat-${box}`), 'Cliquez sur Calculer.');
+            });
         }
     };
 
+    // Lance l'application
     NephroCalcApp.init();
+
+    // Expose les fonctions de modal à la portée globale pour le `onclick` HTML
     window.openModal = NephroCalcApp.modal.open;
     window.closeModal = NephroCalcApp.modal.close;
 });
